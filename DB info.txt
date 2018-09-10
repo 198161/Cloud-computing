@@ -1,0 +1,3 @@
+Database: mydb
+DB login: superUser
+DB password: Student2018

@@ -49,13 +49,13 @@ public class MainActivity extends AppCompatActivity {
         mResult = (TextView) findViewById(R.id.tv_result);
 
         //make GET request
-        new GetDataTask().execute("http://192.168.1.15:1000/api/status");
+        //new GetDataTask().execute("http://192.168.1.15:1000/api/status");
 
         //make POST request
-        new PostDataTask().execute("http://192.168.1.15:1000/api/status");
+        //new PostDataTask().execute("http://192.168.1.15:1000/api/status");
 
         //make PUT request
-        new PutDataTask().execute("http://192.168.1.15:1000/api/status/574400cdd213dde0063a84b9");
+        //new PutDataTask().execute("http://192.168.1.15:1000/api/status/574400cdd213dde0063a84b9");
 
         //make DELETE request
         new DeleteDataTask().execute("http://192.168.1.15:1000/api/status/5744085cd213dde0063a84ba");
@@ -238,4 +238,140 @@ public class MainActivity extends AppCompatActivity {
             return result.toString();
         }
     }
+
+    class PutDataTask extends AsyncTask<String, Void, String> {
+
+        ProgressDialog progressDialog;
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+
+            progressDialog = new ProgressDialog(MainActivity.this);
+            progressDialog.setMessage("Updating data...");
+            progressDialog.show();
+        }
+
+        @Override
+        protected String doInBackground(String... params) {
+            try {
+                return putData(params[0]);
+            } catch (IOException ex) {
+                return "Network error !";
+            } catch (JSONException ex) {
+                return "Data invalid !";
+            }
+
+        }
+
+        @Override
+        protected void onPostExecute(String result) {
+            super.onPostExecute(result);
+
+            mResult.setText(result);
+
+            if (progressDialog != null) {
+                progressDialog.dismiss();
+            }
+        }
+
+        private String putData(String urlPath) throws IOException, JSONException {
+
+            BufferedWriter bufferedWriter = null;
+            String result = null;
+
+            try {
+                //Create data to update
+                JSONObject dataToSend = new JSONObject();
+                dataToSend.put("fbname", "Hello World");
+                dataToSend.put("content", "UPDATE!");
+                dataToSend.put("likes", 10);
+                dataToSend.put("comments", 10);
+
+                //Initialize and config request, then connect to server
+                URL url = new URL(urlPath);
+                HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
+                urlConnection.setReadTimeout(10000 /* milliseconds */);
+                urlConnection.setConnectTimeout(10000 /* milliseconds */);
+                urlConnection.setRequestMethod("PUT");
+                urlConnection.setDoOutput(true);  //enable output (body data)
+                urlConnection.setRequestProperty("Content-Type", "application/json");// set header
+                urlConnection.connect();
+
+                //Write data into server
+                OutputStream outputStream = urlConnection.getOutputStream();
+                bufferedWriter = new BufferedWriter(new OutputStreamWriter(outputStream));
+                bufferedWriter.write(dataToSend.toString());
+                bufferedWriter.flush();
+
+                //Check update successful or not
+                if (urlConnection.getResponseCode() == 200) {
+                    return "Update successfully !";
+                } else {
+                    return "Update failed !";
+                }
+            } finally {
+                if(bufferedWriter != null) {
+                    bufferedWriter.close();
+                }
+            }
+        }
+    }
+
+    class DeleteDataTask extends AsyncTask<String, Void, String> {
+
+        ProgressDialog progressDialog;
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+
+            progressDialog = new ProgressDialog(MainActivity.this);
+            progressDialog.setMessage("Deleting data...");
+            progressDialog.show();
+        }
+
+        @Override
+        protected String doInBackground(String... params) {
+            try {
+                return deleteData(params[0]);
+            } catch (IOException ex) {
+                return "Network error !";
+            }
+        }
+
+        @Override
+        protected void onPostExecute(String result) {
+            super.onPostExecute(result);
+
+            mResult.setText(result);
+
+            if(progressDialog != null) {
+                progressDialog.dismiss();
+            }
+        }
+
+        private String deleteData(String urlPath) throws IOException {
+
+            String result =  null;
+
+            //Initialize and config request, then connect to server.
+            URL url = new URL(urlPath);
+            HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
+            urlConnection.setReadTimeout(10000 /* milliseconds */);
+            urlConnection.setConnectTimeout(10000 /* milliseconds */);
+            urlConnection.setRequestMethod("DELETE");
+            urlConnection.setRequestProperty("Content-Type", "application/json");// set header
+            urlConnection.connect();
+
+            //Check update successful or not
+            if (urlConnection.getResponseCode() == 204) {
+                result = "Delete successfully !";
+            } else {
+                result = "Delete failed !";
+            }
+            return result;
+        }
+    }
+
 }
